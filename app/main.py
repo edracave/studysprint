@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-from app.db import engine, Base
+from .db import engine, Base  # ← import relativo
 
 app = FastAPI(title="StudySprint", version="0.1.0")
 
@@ -10,25 +10,22 @@ async def on_startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-# ---- REGISTRO DEL WEBHOOK (cubre ambos estilos) ----
+# Registrar webhook (router o función)
 try:
-    # Caso A: tu webhook define un APIRouter, p.ej.:
-    # router = APIRouter(prefix="/telegram")
-    # @router.post("/webhook") ...
-    from app.telegram.webhook import router as telegram_router  # type: ignore
+    # Caso A: router con prefix="/telegram"
+    from .telegram.webhook import router as telegram_router  # type: ignore
     app.include_router(telegram_router)
 except Exception:
-    # Caso B: tu webhook expone una función plain `telegram_webhook`
     try:
-        from app.telegram.webhook import telegram_webhook as tg_webhook  # type: ignore
+        # Caso B: función suelta
+        from .telegram.webhook import telegram_webhook as tg_webhook  # type: ignore
         app.post("/telegram/webhook")(tg_webhook)
     except Exception as e:
-        # Deja una pista visible en / para depurar si faltara el import
         @app.get("/_webhook_error", response_class=HTMLResponse)
         def _webhook_error():
             return f"<pre>No se pudo registrar /telegram/webhook:\n{e!r}</pre>"
 
-# ---- Landing ----
+# Landing
 @app.get("/", response_class=HTMLResponse)
 def root():
     return """
