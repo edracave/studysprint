@@ -1,8 +1,18 @@
-
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from app.db import engine, Base
+from app.telegram.webhook import telegram_webhook as tg_webhook  # 👈 importa el handler existente
 
 app = FastAPI(title="StudySprint", version="0.1.0")
+
+# Crear tablas al arrancar
+@app.on_event("startup")
+async def on_startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+# REGISTRA EXPLÍCITAMENTE LA RUTA DEL WEBHOOK
+app.post("/telegram/webhook")(tg_webhook)
 
 @app.get("/", response_class=HTMLResponse)
 def root():
