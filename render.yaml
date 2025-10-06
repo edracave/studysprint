@@ -1,0 +1,9 @@
+﻿services:
+  - type: web
+    name: studysprint
+    env: python
+    buildCommand: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
